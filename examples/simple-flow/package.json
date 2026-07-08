@@ -1,0 +1,25 @@
+{
+  "name": "@mossxyz/example-simple-flow",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "wrap": "tsx src/wmon-wrap.ts",
+    "swap": "tsx src/kuru-swap.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"examples are exercised by e2e tests in packages\" && exit 0",
+    "build": "echo \"examples are not built\" && exit 0"
+  },
+  "dependencies": {
+    "@mossxyz/core": "workspace:*",
+    "@mossxyz/erc": "workspace:*",
+    "@mossxyz/protocol-kuru": "workspace:*",
+    "@mossxyz/simulator": "workspace:*",
+    "@mossxyz/system": "workspace:*",
+    "viem": "^2.54.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.0"
+  }
+}

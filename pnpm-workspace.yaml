@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+  - packages/protocols/*
+  - examples/*
+allowBuilds:
+  esbuild: true
+# Supply-chain guard: refuse dependency versions younger than 1 day (minutes).
+# Blocks the hottest window for compromised releases without the default
+# 7-day window's constant friction on a fast-moving dependency set.
+minimumReleaseAge: 1440

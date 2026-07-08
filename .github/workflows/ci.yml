@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Foundry-in-monorepo invariant (ADR 0007): no git submodules, ever.
+      # forge init/install must use --no-git; this catches any violation.
+      - name: Forbid git submodules
+        run: |
+          if [ -e .gitmodules ] || git ls-files -s | grep -q '^160000'; then
+            echo "git submodules are banned in this repo (ADR 0007): use forge --no-git, npm+remappings, or soldeer"
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      # Build precedes typecheck: workspace packages resolve each other's
+      # types through their built dist/*.d.ts.
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test

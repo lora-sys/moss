@@ -1,0 +1,38 @@
+{
+  "name": "@mossxyz/mcp-server",
+  "version": "0.0.0",
+  "description": "Moss MCP server: discover / load / action / simulate over stdio",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "moss-mcp": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts --format esm --dts --sourcemap --clean --target es2022",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@mossxyz/core": "workspace:*",
+    "@mossxyz/protocol-kuru": "workspace:*",
+    "zod": "^3.25.0",
+    "@mossxyz/erc": "workspace:*",
+    "@mossxyz/system": "workspace:*",
+    "@mossxyz/simulator": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "~5.9.0",
+    "vitest": "^3.2.6"
+  }
+}
