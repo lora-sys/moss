@@ -5,7 +5,7 @@
 ## Considered Options
 
 - **Free-form strings** — rejected: the catalog decays into `swap`/`exchange`/`trade` synonyms within months and discover stops working.
-- **Closed sets only** — rejected: every novel protocol stalls on "no word fits", and vocabulary review becomes the bottleneck for bounty contributions. Tags are the pressure valve.
+- **Closed sets only** — rejected: every novel protocol stalls on "no word fits", and vocabulary review becomes the bottleneck for community contributions. Tags are the pressure valve.
 
 ## Consequences
 

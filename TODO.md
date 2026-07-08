@@ -102,7 +102,7 @@
 - [x] 中文 quickstart：docs/getting-started.zh-CN.md 与英文版逐节对照（7月8日）
 - [ ] 仓库描述 + topics（GitHub 网页设置）
 - [ ] changesets 首次发布出 CHANGELOG
-- [ ] 起草第一批 A 类 bounty issue（lending supply 等，指向 WMON 模板）
+- [x] 第一批 feature issue（7月8日，#5–#15）：8 个协议适配器（Uniswap v4 / PancakeSwap / Clober / Aave v3 / Morpho / Euler v2 / Pendle / FastLane shMONAD，均来自 app.monad.xyz 首页生态）+ 2 个接口层 ERC（4626 触发 ADR 0009 deferred 设计、1155 含审计面词汇）+ 1 个永续 verb/category 设计讨论；label 体系：adapter / interface-layer / 类目（dex/lending/staking/yield）/ difficulty:starter-intermediate-advanced / needs-design
 - [ ] 发布 npm 包前：注册 `@mossxyz` org 确权
 
 ## 已插旗（工程约束与后续事项）
