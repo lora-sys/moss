@@ -8,6 +8,11 @@ Moss turns complex DApp/protocol interactions on [Monad](https://monad.xyz) into
 - **Every write is verified before it reaches a signer.** A built Plan declares exactly what may move (`expects`); simulation replays it against live chain state and warns on any undeclared difference.
 - **Moss never signs and never sends.** It builds and verifies. Keys stay in the wallet; the last word stays with the user.
 
+> [!WARNING]
+> **Moss is alpha software, released for testing and evaluation.** It has not been audited, and APIs, Plan formats, and package layout may change without notice.
+>
+> Understand the risk model before trusting it with real decisions: simulation is a safety net, not a guarantee — results reflect chain state at simulation time, and prices, liquidity, and contract state can move between simulating and signing. Moss never signs or sends transactions, but whatever **you** sign is your responsibility: review every transaction in your wallet, use small amounts while testing, and never read a zero-warning simulation as a promise of execution results. The software is provided "as is", without warranty of any kind ([MIT](./LICENSE)). Guarantees, boundaries, and how to report vulnerabilities: [SECURITY.md](./SECURITY.md).
+
 ## Why
 
 Consider a "simple" swap on a typical DEX: router addresses, exact-in vs exact-out variants, wrapping and unwrapping the native token, refund and sweep cleanup calls, slippage math in the right decimals. An agent that assembles this by reading ABIs will eventually get one of those wrong — and an agent-built transaction that is *almost* right is how funds get lost.
