@@ -1,5 +1,7 @@
 # Getting started — from zero to a verified swap
 
+**English** | [中文](./getting-started.zh-CN.md)
+
 This guide walks you through Moss one layer at a time. You will run the full
 flow first, then open each stage up — discover, load, action, simulate,
 observations — and finish by wiring an agent and sketching your own adapter.

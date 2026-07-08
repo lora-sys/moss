@@ -93,7 +93,7 @@
 - [x] 推送 GitHub 仓库（github.com/nishuzumi/moss，首 commit `c2e14f0`，CI #1 全绿含主网 e2e）
 - [x] CODE_OF_CONDUCT.md（Contributor Covenant 2.1）
 - [x] docs/getting-started.md 新手引导：逐层揭示 discover → load → action → simulate → observations → MCP → 写适配器，每步附 Go deeper 指引
-- [ ] 中文 quickstart 细化（README.zh-CN 已含基础版）
+- [x] 中文 quickstart：docs/getting-started.zh-CN.md 与英文版逐节对照（7月8日）
 - [ ] 仓库描述 + topics（GitHub 网页设置）
 - [ ] changesets 首次发布出 CHANGELOG
 - [ ] 起草第一批 A 类 bounty issue（lending supply 等，指向 WMON 模板）
