@@ -121,7 +121,7 @@ test("rejects API failure and malformed result shapes", async (context) => {
     [
       "non-array ABI",
       { status: "1", message: "OK", result: JSON.stringify({ type: "function" }) },
-      "expected an ABI array",
+      "is not an ABI array",
     ],
     ["non-string result", { status: "1", message: "OK", result: [] }, "non-string result"],
   ];

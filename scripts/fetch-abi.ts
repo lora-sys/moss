@@ -21,6 +21,10 @@ interface Options {
   exportName: string;
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function failure(exitCode: 1 | 2, message: string, key?: string): RunResult {
   return {
     exitCode,
@@ -85,7 +89,7 @@ export async function run(
   } catch (error) {
     return failure(
       2,
-      `network failure fetching ABI for ${parsed.address}: ${error instanceof Error ? error.message : String(error)}`,
+      `network failure fetching ABI for ${parsed.address}: ${errorMessage(error)}`,
       key,
     );
   }
@@ -100,7 +104,7 @@ export async function run(
   } catch (error) {
     return failure(
       2,
-      `Monadscan returned a non-JSON body for ${parsed.address}: ${error instanceof Error ? error.message : String(error)}`,
+      `Monadscan returned a non-JSON body for ${parsed.address}: ${errorMessage(error)}`,
       key,
     );
   }
@@ -124,16 +128,12 @@ export async function run(
   } catch (error) {
     return failure(
       2,
-      `Monadscan returned malformed ABI JSON for ${parsed.address}: ${error instanceof Error ? error.message : String(error)}`,
+      `Monadscan returned malformed ABI JSON for ${parsed.address}: ${errorMessage(error)}`,
       key,
     );
   }
   if (!Array.isArray(abi)) {
-    return failure(
-      2,
-      `Monadscan result for ${parsed.address} is not an ABI array; expected an ABI array`,
-      key,
-    );
+    return failure(2, `Monadscan result for ${parsed.address} is not an ABI array`, key);
   }
 
   const stdout = [
