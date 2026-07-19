@@ -11,9 +11,11 @@ import {
 declare const address: string;
 declare const key: string;
 declare const error: FetchAbiError;
+declare const abi: Abi;
 
 // fetchAbi returns a typed ABI, with fetch injectable.
-const abi: Promise<Abi> = fetchAbi(address, key);
+const fetched: Promise<Abi> = fetchAbi(address, key);
+void fetched;
 void fetchAbi(address, key, { fetch: globalThis.fetch });
 
 // Error kinds stay a closed literal union.
@@ -24,8 +26,7 @@ const badKind: FetchAbiErrorKind = "bogus";
 void badKind;
 
 // renderAbiModule requires the full provenance inputs and a real Abi.
-void (async () =>
-  renderAbiModule({ exportName: "wmon", address, abi: await abi, retrievedAt: new Date() }));
+void renderAbiModule({ exportName: "wmon", address, abi, retrievedAt: new Date() });
 // @ts-expect-error retrievedAt is required — the renderer never reads the clock
 void renderAbiModule({ exportName: "wmon", address, abi: [] });
 // @ts-expect-error a raw string is not an Abi

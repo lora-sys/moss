@@ -33,7 +33,11 @@ export interface FetchAbiOptions {
   fetch?: typeof globalThis.fetch;
 }
 
-/** Replace every raw and URL-encoded occurrence of a secret with `[REDACTED]`. */
+/**
+ * Replace every occurrence of a secret with `[REDACTED]`: raw, plus both URL
+ * encodings an error message can echo — percent encoding (space → `%20`) and
+ * form encoding (space → `+`) differ, so both forms are covered.
+ */
 export function redactSecret(text: string, secret: string): string {
   if (!secret) return text;
   const forms = new Set([
@@ -55,26 +59,26 @@ const isBoolean = (value: unknown): boolean => typeof value === "boolean";
 const optional = (value: unknown, check: (value: unknown) => boolean): boolean =>
   value === undefined || check(value);
 
-function isParameter(value: unknown, event: boolean): boolean {
+function isParameter(value: unknown, allowIndexed: boolean): boolean {
   if (typeof value !== "object" || value === null) return false;
   const parameter = value as Record<string, unknown>;
   return (
     typeof parameter.type === "string" &&
     optional(parameter.name, isString) &&
     optional(parameter.internalType, isString) &&
-    (!event || optional(parameter.indexed, isBoolean)) &&
-    optional(parameter.components, (components) => isParameterArray(components, event))
+    (!allowIndexed || optional(parameter.indexed, isBoolean)) &&
+    optional(parameter.components, (components) => isParameterArray(components, allowIndexed))
   );
 }
 
-function isParameterArray(value: unknown, event = false): boolean {
-  return Array.isArray(value) && value.every((parameter) => isParameter(parameter, event));
+function isParameterArray(value: unknown, allowIndexed = false): boolean {
+  return Array.isArray(value) && value.every((parameter) => isParameter(parameter, allowIndexed));
 }
 
 function isAbiItem(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
   const item = value as Record<string, unknown>;
-  const mutability = (allowed: readonly string[]): boolean =>
+  const hasMutability = (allowed: readonly string[]): boolean =>
     typeof item.stateMutability === "string" && allowed.includes(item.stateMutability);
   switch (item.type) {
     case "function":
@@ -82,7 +86,7 @@ function isAbiItem(value: unknown): boolean {
         typeof item.name === "string" &&
         isParameterArray(item.inputs) &&
         isParameterArray(item.outputs) &&
-        mutability(["pure", "view", "nonpayable", "payable"]) &&
+        hasMutability(["pure", "view", "nonpayable", "payable"]) &&
         optional(item.constant, isBoolean) &&
         optional(item.payable, isBoolean) &&
         optional(item.gas, (gas) => typeof gas === "number")
@@ -98,12 +102,12 @@ function isAbiItem(value: unknown): boolean {
     case "constructor":
       return (
         isParameterArray(item.inputs) &&
-        mutability(["payable", "nonpayable"]) &&
+        hasMutability(["payable", "nonpayable"]) &&
         optional(item.payable, isBoolean)
       );
     case "fallback":
       return (
-        mutability(["payable", "nonpayable"]) &&
+        hasMutability(["payable", "nonpayable"]) &&
         optional(item.payable, isBoolean) &&
         optional(item.inputs, (inputs) => Array.isArray(inputs) && inputs.length === 0)
       );
@@ -119,7 +123,9 @@ function isAbiItem(value: unknown): boolean {
  * per-kind stateMutability sets and declared optional members follow the
  * abitype item types exactly. Deliberately strict about legacy pre-0.5.0
  * artifacts (no `stateMutability`): Monad mainnet contracts are modern, and
- * an explicit failure beats silently normalizing a security artifact.
+ * an explicit failure beats silently normalizing a security artifact — which
+ * is also why abitype's own zod schemas (they backfill `stateMutability`
+ * from legacy `constant`/`payable`) are not used here.
  */
 export function isAbi(value: unknown): value is Abi {
   return Array.isArray(value) && value.every(isAbiItem);

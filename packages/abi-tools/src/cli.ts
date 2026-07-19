@@ -1,4 +1,4 @@
-import { ADDRESS_PATTERN, FetchAbiError, fetchAbi, redactSecret } from "./fetch-abi.js";
+import { ADDRESS_PATTERN, fetchAbi, redactSecret } from "./fetch-abi.js";
 import { renderAbiModule } from "./render.js";
 
 const USAGE = "Usage: pnpm fetch-abi <address> <exportName>";
@@ -64,8 +64,8 @@ export async function run(
       stderr: "",
     };
   } catch (error) {
+    // Everything past the argv/env pre-checks is an execution failure: exit 2.
     const message = error instanceof Error ? error.message : String(error);
-    const exitCode = error instanceof FetchAbiError && error.kind === "invalid-input" ? 1 : 2;
-    return failure(exitCode, redactSecret(message, key));
+    return failure(2, redactSecret(message, key));
   }
 }
