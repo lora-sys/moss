@@ -85,6 +85,13 @@ describe("fetchAbi", () => {
     ["non-JSON body", "not json", "invalid-response", /non-JSON body/],
     ["null envelope", null, "invalid-response", /invalid API envelope/],
     ["array envelope", [1], "invalid-response", /invalid API envelope/],
+    ["envelope without status", {}, "invalid-response", /invalid API envelope/],
+    [
+      "numeric status",
+      { status: 0, message: "NOTOK", result: "x" },
+      "invalid-response",
+      /invalid API envelope/,
+    ],
     [
       "non-string result",
       { status: "1", message: "OK", result: [] },
@@ -136,30 +143,65 @@ describe("fetchAbi", () => {
 });
 
 describe("isAbi", () => {
-  it("accepts the standard item kinds", () => {
+  it("accepts the standard item kinds with their declared optional members", () => {
     expect(
       isAbi([
         ...ABI,
-        { type: "event", name: "Transfer", inputs: [] },
+        {
+          type: "event",
+          name: "Transfer",
+          anonymous: false,
+          inputs: [{ name: "from", type: "address", indexed: true }],
+        },
         { type: "error", name: "Denied", inputs: [{ type: "address" }] },
         { type: "constructor", stateMutability: "nonpayable", inputs: [] },
-        { type: "fallback", stateMutability: "payable" },
+        { type: "fallback", stateMutability: "payable", payable: true, inputs: [] },
         { type: "receive", stateMutability: "payable" },
         {
           type: "function",
           name: "nested",
           stateMutability: "view",
-          inputs: [{ type: "tuple", components: [{ type: "uint256" }] }],
+          constant: true,
+          gas: 30000,
+          inputs: [{ type: "tuple", components: [{ type: "uint256", internalType: "uint256" }] }],
           outputs: [],
         },
       ]),
     ).toBe(true);
   });
 
-  it("rejects malformed items", () => {
-    expect(isAbi([{ type: "function", name: "f" }])).toBe(false);
-    expect(isAbi([{ type: "mystery" }])).toBe(false);
-    expect(isAbi(["function f()"])).toBe(false);
+  it.each([
+    ["function without stateMutability or parameters", { type: "function", name: "f" }],
+    [
+      "legacy function without stateMutability",
+      { type: "function", name: "f", inputs: [], outputs: [], constant: true, payable: false },
+    ],
+    [
+      "function with a non-numeric gas",
+      { type: "function", name: "f", inputs: [], outputs: [], stateMutability: "view", gas: "1" },
+    ],
+    ["view constructor", { type: "constructor", stateMutability: "view", inputs: [] }],
+    ["pure fallback", { type: "fallback", stateMutability: "pure" }],
+    ["nonpayable receive", { type: "receive", stateMutability: "nonpayable" }],
+    [
+      "fallback with parameters",
+      { type: "fallback", stateMutability: "payable", inputs: [{ type: "bytes" }] },
+    ],
+    [
+      "event with a non-boolean indexed flag",
+      { type: "event", name: "E", inputs: [{ type: "address", indexed: "yes" }] },
+    ],
+    [
+      "parameter with a non-string name",
+      { type: "error", name: "E", inputs: [{ type: "address", name: 5 }] },
+    ],
+    ["unknown item kind", { type: "mystery" }],
+    ["string item", "function f()"],
+  ])("rejects %s", (_name, item) => {
+    expect(isAbi([item])).toBe(false);
+  });
+
+  it("rejects non-arrays", () => {
     expect(isAbi({})).toBe(false);
   });
 });
@@ -170,5 +212,17 @@ describe("redactSecret", () => {
       "x [REDACTED] y [REDACTED]",
     );
     expect(redactSecret("unchanged", "")).toBe("unchanged");
+  });
+
+  it("covers keys whose two URL encodings differ and regex special characters", () => {
+    const key = "se cret+key$[";
+    const percentEncoded = encodeURIComponent(key); // se%20cret%2Bkey%24%5B
+    const formEncoded = new URLSearchParams({ s: key }).toString().slice("s=".length); // se+cret%2Bkey%24%5B
+    expect(percentEncoded).not.toBe(formEncoded);
+    const redacted = redactSecret(`a ${key} b ${percentEncoded} c ${formEncoded}`, key);
+    expect(redacted).not.toContain(key);
+    expect(redacted).not.toContain(percentEncoded);
+    expect(redacted).not.toContain(formEncoded);
+    expect(redacted).toBe("a [REDACTED] b [REDACTED] c [REDACTED]");
   });
 });

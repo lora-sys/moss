@@ -50,45 +50,77 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-const STATE_MUTABILITY = new Set(["pure", "view", "nonpayable", "payable"]);
+const isString = (value: unknown): boolean => typeof value === "string";
+const isBoolean = (value: unknown): boolean => typeof value === "boolean";
+const optional = (value: unknown, check: (value: unknown) => boolean): boolean =>
+  value === undefined || check(value);
 
-function isParameterArray(value: unknown): boolean {
+function isParameter(value: unknown, event: boolean): boolean {
+  if (typeof value !== "object" || value === null) return false;
+  const parameter = value as Record<string, unknown>;
   return (
-    Array.isArray(value) &&
-    value.every((parameter) => {
-      if (typeof parameter !== "object" || parameter === null) return false;
-      const { type, components } = parameter as Record<string, unknown>;
-      if (typeof type !== "string") return false;
-      return components === undefined || isParameterArray(components);
-    })
+    typeof parameter.type === "string" &&
+    optional(parameter.name, isString) &&
+    optional(parameter.internalType, isString) &&
+    (!event || optional(parameter.indexed, isBoolean)) &&
+    optional(parameter.components, (components) => isParameterArray(components, event))
   );
+}
+
+function isParameterArray(value: unknown, event = false): boolean {
+  return Array.isArray(value) && value.every((parameter) => isParameter(parameter, event));
 }
 
 function isAbiItem(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
   const item = value as Record<string, unknown>;
+  const mutability = (allowed: readonly string[]): boolean =>
+    typeof item.stateMutability === "string" && allowed.includes(item.stateMutability);
   switch (item.type) {
     case "function":
       return (
         typeof item.name === "string" &&
         isParameterArray(item.inputs) &&
         isParameterArray(item.outputs) &&
-        STATE_MUTABILITY.has(item.stateMutability as string)
+        mutability(["pure", "view", "nonpayable", "payable"]) &&
+        optional(item.constant, isBoolean) &&
+        optional(item.payable, isBoolean) &&
+        optional(item.gas, (gas) => typeof gas === "number")
       );
     case "event":
+      return (
+        typeof item.name === "string" &&
+        isParameterArray(item.inputs, true) &&
+        optional(item.anonymous, isBoolean)
+      );
     case "error":
       return typeof item.name === "string" && isParameterArray(item.inputs);
     case "constructor":
-      return isParameterArray(item.inputs) && STATE_MUTABILITY.has(item.stateMutability as string);
+      return (
+        isParameterArray(item.inputs) &&
+        mutability(["payable", "nonpayable"]) &&
+        optional(item.payable, isBoolean)
+      );
     case "fallback":
+      return (
+        mutability(["payable", "nonpayable"]) &&
+        optional(item.payable, isBoolean) &&
+        optional(item.inputs, (inputs) => Array.isArray(inputs) && inputs.length === 0)
+      );
     case "receive":
-      return STATE_MUTABILITY.has(item.stateMutability as string);
+      return item.stateMutability === "payable";
     default:
       return false;
   }
 }
 
-/** Structural runtime validation backing the compile-time `Abi` contract. */
+/**
+ * Structural runtime validation backing the compile-time `Abi` contract:
+ * per-kind stateMutability sets and declared optional members follow the
+ * abitype item types exactly. Deliberately strict about legacy pre-0.5.0
+ * artifacts (no `stateMutability`): Monad mainnet contracts are modern, and
+ * an explicit failure beats silently normalizing a security artifact.
+ */
 export function isAbi(value: unknown): value is Abi {
   return Array.isArray(value) && value.every(isAbiItem);
 }
@@ -145,10 +177,13 @@ export async function fetchAbi(
     fail("invalid-response", `Monadscan returned an invalid API envelope for ${address}`);
   }
   const { status, message, result } = envelope as Record<string, unknown>;
-  if (status !== "1") {
+  if (status === "0") {
     const reason =
       typeof result === "string" ? result : typeof message === "string" ? message : "unknown error";
     fail("api-refused", `Monadscan API refused ${address}: ${reason}`);
+  }
+  if (status !== "1") {
+    fail("invalid-response", `Monadscan returned an invalid API envelope for ${address}`);
   }
   if (typeof result !== "string") {
     fail("invalid-response", `Monadscan returned a non-string result for ${address}`);
